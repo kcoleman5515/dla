@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../viewmodel/lattice_viewmodel.dart';
+import '../model/lattice.dart';
 
 class DlaHomePage extends StatefulWidget {
   const DlaHomePage({Key? key, required this.title}) : super(key: key);
@@ -19,10 +21,31 @@ class DlaHomePage extends StatefulWidget {
 }
 
 class _DlaHomePageState extends State<DlaHomePage> {
+  final ViewModel _viewModel = ViewModel();
+  late final Stream<bool> _runningStream;
+  late final Stream<int> _sizeStream;
+
   bool _running = false;
 
-  void _toggleRunning() {
-    setState(() => _running = !_running);
+  _DlaHomePageState() {
+    _sizeStream = _viewModel.sizeStream;
+    _sizeStream.listen((event) => _viewModel.seed(Point(124, 124)));
+    _runningStream = _viewModel.runningStream;
+    _runningStream.listen((event) {
+      if (event) {
+        _resume();
+      } else {
+        _pause();
+      }
+    });
+  }
+
+  void _resume() {
+    setState(() => _running = true);
+  }
+
+  void _pause() {
+    setState(() => _running = false);
   }
 
   @override
@@ -48,13 +71,13 @@ class _DlaHomePageState extends State<DlaHomePage> {
           if (!_running)
             IconButton(
               icon: const Icon(Icons.play_arrow),
-              onPressed: _toggleRunning,
+              onPressed: _viewModel.resume,
               tooltip: 'Begin or resume accumulation of the aggregate',
             )
           else
             IconButton(
               icon: const Icon(Icons.pause),
-              onPressed: _toggleRunning,
+              onPressed: _viewModel.pause,
               tooltip: 'Pause accumulation of the aggregate',
             )
         ],
@@ -62,6 +85,15 @@ class _DlaHomePageState extends State<DlaHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
+        child: StreamBuilder<Point>(
+          stream: _viewModel.pointStream,
+          builder: (context, event) {
+            Point p = event.data as Point;
+            return Text(
+              '[${p.x}, ${p.y}]'
+            );
+          }
+        ),
       ),
     );
   }
